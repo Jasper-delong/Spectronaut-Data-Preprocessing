@@ -205,3 +205,32 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# ==================================
+# My Proteomics Project Specific Ignores
+# ==================================
+
+# 1. Ignore all contents within the data, processed_data, and figures directories.
+#    The .gitkeep files in them will still be tracked if they were added before this rule.
+#    This prevents uploading large data files, intermediate results, and generated plots.
+data/*
+processed_data/*
+figures/*
+
+# 2. Add an "un-ignore" rule for the .gitkeep files, so that new empty
+#    directories with .gitkeep in them can still be added.
+#    The "!" negates the previous rule for this specific pattern.
+!data/.gitkeep
+!processed_data/.gitkeep
+!figures/.gitkeep
+
+# 3. (Optional but Recommended) Explicitly ignore common data file extensions,
+#    just in case they are accidentally placed outside the designated folders.
+*.xlsx
+*.csv
+*.tsv
+*.txt
+*.png
+*.svg
+*.pdf
