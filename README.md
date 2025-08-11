@@ -90,10 +90,12 @@ A standardized workflow for processing Spectronaut proteomics data
     蛋白质组列：“PG.ProteinGroups”
     肽段列：“PEP.StrippedSequence”
     然后统计每组中的唯一肽段和唯一蛋白质组数目，然后进行统计作图
+    *   **操作** 先找出所有组的名称，然后根据需求进行所有组的bar图分析或进行某组内的重复性检测，包括bar图和venn图绘制
+
+2. **蛋白质组定量重复性检验**：
+    *   **逻辑** 从原始列表中找出三列，作为一个新的定量性矩阵，分别是index='PG.ProteinGroups',  columns='R.FileName', values='PG.Quantity'后面对这个图进行热图分析、PCA分析和定量分布箱线图分析。
 
 
-<!-- 在这里详细解释你将如何评估重复性，例如： -->
-在这一步，我们将评估三次生物学重复实验的一致性。我们会按每个样本（`R.FileName`）进行分组，然后分别统计每个样本中鉴定到的唯一蛋白质组和肽段的数量。最后，通过绘制条形图，我们可以直观地比较这些数量。如果重复性好，那么同一组的重复样本，其鉴定数量应该非常接近。
 
 ---
 
