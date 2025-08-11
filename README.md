@@ -62,7 +62,7 @@ A standardized workflow for processing Spectronaut proteomics data
 在这一步，我们使用了 Python 的 `pandas` 库来读取 Spectronaut 生成的 `.xlsx` 报告文件。通过 `pd.read_excel()` 函数，我们指定了文件的路径和要读取的工作表 (Sheet) 名称，成功将原始数据加载到一个名为 `df` 的 DataFrame 变量中，为后续处理做好了准备。
 
 ### 1.2. 数据清洗与过滤 (Data Cleaning & Filtering)
-**状态**: ⏳ 进行中...
+**状态**: ✅ 已完成
 
 **操作描述**:
 这是数据质控最关键的步骤，目的是为了剔除会干扰分析的无效数据。此步骤包含以下三个子任务：
@@ -80,9 +80,18 @@ A standardized workflow for processing Spectronaut proteomics data
     *   **如何做？** 行业标准是筛选 `PG.Qvalue < 0.01` 的数据，这意味着在我们保留的所有蛋白质中，预计只有不到 1% 是错误的鉴定。
 
 ### 1.3. 评估实验重复性 (Assess Reproducibility)
-**状态**: 📋 待办
+**状态**: 📋 进行中
 
 **操作描述**:
+重复性检验包括以下步骤
+1. **蛋白质组与肽段数目重复性监测**：
+    *   **逻辑** 从已经清洗的列表“df_filtered”中选择三列进行分析，分别是：
+    样本名称列：“R.FileName”
+    蛋白质组列：“PG.ProteinGroups”
+    肽段列：“PEP.StrippedSequence”
+    然后统计每组中的唯一肽段和唯一蛋白质组数目，然后进行统计作图
+
+
 <!-- 在这里详细解释你将如何评估重复性，例如： -->
 在这一步，我们将评估三次生物学重复实验的一致性。我们会按每个样本（`R.FileName`）进行分组，然后分别统计每个样本中鉴定到的唯一蛋白质组和肽段的数量。最后，通过绘制条形图，我们可以直观地比较这些数量。如果重复性好，那么同一组的重复样本，其鉴定数量应该非常接近。
 
