@@ -1,3 +1,4 @@
+
 # Spectronaut-Data-Preprocessing-
 A standardized workflow for processing Spectronaut proteomics data
 
@@ -27,78 +28,96 @@ A standardized workflow for processing Spectronaut proteomics data
     ```
 
 2.  **安装所需依赖**
-    本项目依赖于以下 Python 库。建议在虚拟环境中安装。
+    本项目依赖于多个 Python 库。建议在虚拟环境中安装。
     ```bash
-    pip install pandas openpyxl matplotlib seaborn
+    pip install pandas openpyxl matplotlib seaborn scikit-learn matplotlib-venn
     ```
+    *注意：代码中为了实现中文显示，指定了字体路径 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`。请确保您的系统中存在此字体或修改为其他可用中文字体路径。*
 
 ## 分析流程大纲 (Analysis Workflow)
 
+本流程主要分为两个核心阶段：数据清洗与质控，以及数据整理与归一化。
 
 ## 目录 (Table of Contents)
 
-*   [1. 阶段一：数据质控 (Data Quality Control)](#1-阶段一数据质控-data-quality-control)
+*   [1. 阶段一：数据清洗与质量控制 (Data Cleaning & Quality Control)](#1-阶段一数据清洗与质量控制-data-cleaning--quality-control)
     *   [1.1. 数据导入 (Data Import)](#11-数据导入-data-import)
     *   [1.2. 数据清洗与过滤 (Data Cleaning & Filtering)](#12-数据清洗与过滤-data-cleaning--filtering)
-    *   [1.3. 评估实验重复性 (Assess Reproducibility)](#13-评估实验重复性-assess-reproducibility)
+    *   [1.3. 实验重复性评估 (Assess Reproducibility)](#13-实验重复性评估-assess-reproducibility)
+    *   [1.4. 绝对质量评估 (Absolute Quality Assessment)](#14-绝对质量评估-absolute-quality-assessment)
 *   [2. 阶段二：数据整理与归一化 (Data Wrangling & Normalization)](#2-阶段二数据整理与归一化-data-wrangling--normalization)
 
 ---
 
-## 1. 阶段一：数据质控 (Data Quality Control)
-<!-- 在这里总体介绍第一阶段的目标 -->
-本阶段的核心目标是确保我们分析的数据是干净、可靠的。我们将移除低质量和无关的匹配，并评估实验本身的稳定性。
+## 1. 阶段一：数据清洗与质量控制 (Data Cleaning & Quality Control)
+
+本阶段的核心目标是确保用于分析的数据是干净、可靠的。我们将移除低质量和无关的匹配，并评估实验本身的稳定性与数据质量。
 
 ### 1.1. 数据导入 (Data Import)
 **状态**: ✅ 已完成
 
 **操作描述**:
-在这一步，我们使用了 Python 的 `pandas` 库来读取 Spectronaut 生成的 `.xlsx` 报告文件。通过 `pd.read_excel()` 函数，我们指定了文件的路径和要读取的工作表 (Sheet) 名称，成功将原始数据加载到一个名为 `df` 的 DataFrame 变量中，为后续处理做好了准备。
+使用 Python 的 `pandas` 库读取 Spectronaut 生成的 `.xlsx` 报告文件。通过 `pd.read_excel()` 函数，将原始数据加载到一个 DataFrame 变量中，为后续处理做好准备。
 
 ### 1.2. 数据清洗与过滤 (Data Cleaning & Filtering)
 **状态**: ✅ 已完成
 
 **操作描述**:
-这是数据质控最关键的步骤，目的是为了剔除会干扰分析的无效数据。此步骤包含以下三个子任务：
+此步骤是保证数据质量的关键，目的是剔除会干扰分析的无效数据。此步骤包含以下三个核心任务：
 
 1.  **移除伪数据库匹配 (Decoys)**:
-    *   **为什么这么做？** 伪数据库（Decoy）是用于计算错误发现率（FDR）的“诱饵”序列，它们不是真实的蛋白质。在进行生物学分析前，必须将其完全移除。
-    *   **如何做？** 我们将筛选 DataFrame，只保留 `EG.IsDecoy` 列为 `False` 的行。
+    *   **原因**: 伪数据库（Decoy）匹配是用于计算错误发现率（FDR）的“诱饵”序列，并非真实蛋白质，必须在生物学分析前移除。
+    *   **操作**: 筛选并只保留 `EG.IsDecoy` 列为 `False` 的行。
 
 2.  **移除已知的污染物 (Contaminants)**:
-    *   **为什么这么做？** 样品处理过程中不可避免地会引入一些常见污染物（如角蛋白、胰蛋白酶等），这些蛋白质并非来自我们的目标样本，会干扰定量和后续分析。
-    *   **如何做？** Spectronaut 通常会用 `CON__` 前缀来标记这些污染物蛋白。我们将筛选并移除 `PG.ProteinAccessions` 列中所有以此为开头的行。
+    *   **原因**: 样品制备过程中会引入角蛋白、胰蛋白酶等常见污染物，它们并非源自目标样本，需剔除以避免干扰。
+    *   **操作**: Spectronaut 通常用 `CON__` 前缀标记污染物。筛选并移除 `PG.ProteinAccessions` 列中所有以此为开头的行。
 
 3.  **基于 Q-value 进行过滤**:
-    *   **为什么这么做？** `PG.Qvalue` 代表蛋白质组鉴定的可信度（即FDR）。为了保证分析结果的可靠性，我们只保留那些高可信度的蛋白质。
-    *   **如何做？** 行业标准是筛选 `PG.Qvalue < 0.01` 的数据，这意味着在我们保留的所有蛋白质中，预计只有不到 1% 是错误的鉴定。
+    *   **原因**: `PG.Qvalue` 代表蛋白质组鉴定的可信度。为保证结果可靠性，只保留高可信度的蛋白质。
+    *   **操作**: 依据行业标准，筛选 `PG.Qvalue < 0.01` 的数据，这意味着在保留的蛋白质中，预计只有不到 1% 是错误鉴定。
 
-### 1.3. 评估实验重复性 (Assess Reproducibility)
-**状态**: 📋 进行中
+### 1.3. 实验重复性评估 (Assess Reproducibility)
+**状态**: ✅ 已完成
 
 **操作描述**:
-重复性检验包括以下步骤
-1. **蛋白质组与肽段数目重复性监测**：
-    *   **逻辑** 从已经清洗的列表“df_filtered”中选择三列进行分析，分别是：
-    样本名称列：“R.FileName”
-    蛋白质组列：“PG.ProteinGroups”
-    肽段列：“PEP.StrippedSequence”
-    然后统计每组中的唯一肽段和唯一蛋白质组数目，然后进行统计作图
-    *   **操作** 先找出所有组的名称，然后根据需求进行所有组的bar图分析或进行某组内的重复性检测，包括bar图和venn图绘制
+本步骤旨在评估技术或生物学重复样本之间的一致性，是衡量实验稳定性的重要指标。通过两个函数 `assess_reproducibility` 和 `analyze_quantitative_reproducibility` 实现。
 
-2. **蛋白质组定量重复性检验**：
-    *   **逻辑** 从原始列表中找出三列，作为一个新的定量性矩阵，分别是index='PG.ProteinGroups',  columns='R.FileName', values='PG.Quantity'后面对这个图进行热图分析、PCA分析和定量分布箱线图分析。
-    *   **操作** 已经将所有的步骤化作一个函数，只要按照代码中的指引输入参数即可，可以对所有样品进行定量重复分析，也可以对指定的样本进行定量分析。
+1. **蛋白质组与肽段数目重复性监测**:
+    *   **目的**: 检查在重复样本中鉴定到的蛋白质和肽段数量是否稳定，重叠度是否高。
+    *   **操作**: 使用 `assess_reproducibility` 函数，该函数可以：
+        *   统计每个样本中唯一的蛋白质组和肽段数量，并生成**条形图 (Bar Plot)**进行可视化比较。
+        *   当指定分析 2 或 3 个样本时，自动绘制**韦恩图 (Venn Diagram)**，直观展示它们之间的鉴定重叠情况。
 
+2. **蛋白质组定量重复性检验**:
+    *   **目的**: 评估重复样本间蛋白质丰度测量的相关性和一致性。
+    *   **操作**: 使用 `analyze_quantitative_reproducibility` 函数，该函数在对数据进行 Log2 转换后，自动化生成以下图表：
+        *   **相关性热图 (Correlation Heatmap)**: 计算并展示样本间皮尔逊相关系数，数值越接近1，重复性越好。
+        *   **主成分分析图 (PCA Plot)**: 通过降维将样本在二维空间中展示，重复性好的样本会聚集在一起。
+        *   **定量分布箱线图 (Box Plot)**: 比较各样本定量值的分布情况，检查是否存在需要校正的系统性偏差。
+
+### 1.4. 绝对质量评估 (Absolute Quality Assessment)
+**状态**: ✅ 已完成
+
+**操作描述**:
+除了样本间的重复性，本流程还包含了对数据绝对质量的评估，以确保鉴定结果本身是可靠的。
+
+1.  **每个蛋白质组的肽段支持数**:
+    *   **目的**: 评估蛋白质鉴定的证据强度。一个蛋白质被越多的唯一肽段所支持，其鉴定结果就越可靠。
+    *   **操作**: 统计每个蛋白质组对应的唯一肽段数量，并绘制**直方图 (Histogram)**，展示其整体分布。通常，大部分蛋白质应由至少2个肽段支持。
+
+2.  **酶切效率分析 (Missed Cleavages)**:
+    *   **目的**: 评估胰蛋白酶的酶切效率。高效的酶切会产生大量没有“漏切位点”的肽段。
+    *   **操作**: 统计唯一肽段中包含 0, 1, 2... 个漏切位点的比例，并生成**条形图**。一个高质量的实验，通常超过70%的肽段应为0个漏切位点。
 
 
 
 ## 如何使用
 
 1.  将您的 Spectronaut 输出的 `.xlsx` 文件放入 `/data` 文件夹。
-2.  打开 `/scripts` 文件夹中的主分析 Notebook (`.ipynb` 文件)。
-3.  根据 Notebook 中的说明，修改文件路径等参数。
-4.  按顺序运行 Notebook 中的所有代码块。
+2.  打开 `/scripts` 文件夹中的主分析 Notebook (`preprocessing.ipynb` 文件)。
+3.  根据 Notebook 中的说明，修改文件路径、工作表名称以及用于分析的样本白名单 (`sample_whitelist`) 等参数。
+4.  按顺序运行 Notebook 中的所有代码块，生成的图表会自动保存在 `/figures` 目录。
 
 ## 作者
 
