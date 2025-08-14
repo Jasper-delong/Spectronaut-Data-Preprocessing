@@ -45,7 +45,6 @@ A standardized workflow for processing Spectronaut proteomics data
     *   [1.2. 数据清洗与过滤 (Data Cleaning & Filtering)](#12-数据清洗与过滤-data-cleaning--filtering)
     *   [1.3. 实验重复性评估 (Assess Reproducibility)](#13-实验重复性评估-assess-reproducibility)
     *   [1.4. 绝对质量评估 (Absolute Quality Assessment)](#14-绝对质量评估-absolute-quality-assessment)
-*   [2. 阶段二：数据整理与归一化 (Data Wrangling & Normalization)](#2-阶段二数据整理与归一化-data-wrangling--normalization)
 
 ---
 
